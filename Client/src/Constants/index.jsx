@@ -1,5 +1,6 @@
-import logo from "../../public/images/JobFitAi.png";
-
+import logo from "../images/JobFitAi.png";
+import name from "../images/name.png";
 export const images = {
-    logo
+    logo,
+    name
 }
