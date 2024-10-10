@@ -4,6 +4,7 @@ import bgOutline from "../images/bg-outlines.svg"
 import bgOutlineFill from "../images/bg-outlines-fill.png";
 import close from "../images/close.svg";
 import magic from "../images/magic.svg";
+import Zap from "../images/zap.svg";
 export const images = {
     logo,
     name,
@@ -11,4 +12,5 @@ export const images = {
     bgOutlineFill,
     close,
     magic,
+    Zap,
 }
