@@ -22,6 +22,12 @@ import plan3 from "../images/plan-3.png";
 import triangle from "../images/triangle.svg";
 import hexagon from "../images/hexagon.svg";
 import logoFaq from "../images/faq-logo.svg";
+import jessicaSaunders from "../images/jessica-saunders.png";
+import markErixon from "../images/mark-erixon.png";
+import melanieHurst from "../images/melanie-hurst.png";
+import aliciaBarker from "../images/alicia-barker.png";
+import beckySnider from "../images/becky-snider.png";
+import jimBradley from "../images/jim-bradley.png";
 export const images = {
     logo,
     name,
@@ -47,6 +53,12 @@ export const images = {
     triangle,
     hexagon,
     logoFaq,
+    jessicaSaunders,
+    markErixon,
+    melanieHurst,
+    aliciaBarker,
+    beckySnider,
+    jimBradley,
 }
 
 export const features = [
@@ -208,4 +220,53 @@ export const features = [
         "If you're locked out of your account, you can reset your password using the 'Forgot Password' option on the login page, or contact our support team for further assistance.",
     },
   ];
-  
+  export const testimonials = [
+    {
+      id: "0",
+      name: "Jessica Saunders",
+      role: "Software Engineer at Globalnomads",
+      avatarUrl: images.jessicaSaunders, // Use the variable from images
+      comment:
+        "JobFitAI has been a game-changer for my job search. The AI-powered job matching helped me find my dream role within weeks!",
+    },
+    {
+      id: "1",
+      name: "Mark Erixon",
+      role: "Data Analyst at Vid Capital Intl",
+      avatarUrl: images.markErixon, // Use the variable from images
+      comment:
+        "I never thought I'd get personalized career guidance through AI, but JobFitAI’s suggestions for resume improvements and interview prep were spot on.",
+    },
+    {
+      id: "2",
+      name: "Melanie Hurst",
+      role: "Full Stack Developer at Cyberleap",
+      avatarUrl: images.melanieHurst, // Use the variable from images
+      comment:
+        "JobFitAI made job hunting so much easier. I especially loved the resume suggestions and tailored job listings.",
+    },
+    {
+      id: "3",
+      name: "Alicia Barker",
+      role: "Frontend Developer at Cyberleap",
+      avatarUrl: images.aliciaBarker, // Use the variable from images
+      comment:
+        "The personalized job matches were incredibly accurate. I landed interviews with top companies I never thought I was qualified for.",
+    },
+    {
+      id: "4",
+      name: "Becky Snider",
+      role: "Project Manager at Floclips",
+      avatarUrl: images.beckySnider, // Use the variable from images
+      comment:
+        "I started using JobFitAI last month and have already secured multiple interviews. The platform is user-friendly and highly efficient!",
+    },
+    {
+      id: "5",
+      name: "Jim Bradley",
+      role: "Backend Developer at Vid Capital Intl",
+      avatarUrl: images.jimBradley, // Use the variable from images
+      comment:
+        "JobFitAI transformed my job search process. The AI-driven recommendations and interview tips were invaluable!",
+    },
+  ];
