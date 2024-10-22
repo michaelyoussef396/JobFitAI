@@ -6,7 +6,7 @@
 from flask import request, jsonify
 from flask_restful import Resource
 from werkzeug.security import generate_password_hash
-from models import User
+from models import User, Skill, Job, Application, Experience
 # Local imports
 from config import app, db, api
 # Add your model imports
@@ -74,6 +74,32 @@ def get_job_matches():
         {"title": "Data Scientist", "company": "Data Insights", "location": "Remote"},
     ]
     return jsonify({"jobs": jobs})
+@app.route('/skills', methods=['POST'])
+def add_skill():
+    data = request.get_json()
+    email = data.get('email')
+    skill_name = data.get('skill')
+
+    # Find the user by email
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    # Check if the skill already exists
+    skill = Skill.query.filter_by(name=skill_name).first()
+
+    # If skill doesn't exist, create a new one
+    if not skill:
+        skill = Skill(name=skill_name)
+        db.session.add(skill)
+    
+    # Add the skill to the user's skill set if not already added
+    if skill not in user.skills:
+        user.skills.append(skill)
+        db.session.commit()
+
+    return jsonify({"message": f"Skill '{skill_name}' added successfully!"}), 201
+
 
 @app.route('/')
 def index():
