@@ -30,7 +30,23 @@ def signup():
 
     return jsonify({"message": "User created successfully!"}), 201
 
-# Views go here!
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+
+    # Check if the user exists
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"message": "User does not exist!"}), 400
+
+    # Check password
+    if not user.check_password(password):
+        return jsonify({"message": "Invalid password!"}), 400
+
+    return jsonify({"message": "Login successful!", "user": {"name": user.name, "email": user.email}}), 200
+
 
 @app.route('/')
 def index():
