@@ -10,6 +10,7 @@ import Footer from './sections/Footer';
 import LoginSignup from './pages/LoginSignup';
 import Dashboard from './components/Dashboard';
 import { UserProvider } from './UserContext';  // Import the UserProvider
+import JobListings from './components/JobListings';
 
 const App = () => {
   return (
@@ -32,6 +33,7 @@ const App = () => {
           />
           <Route path="/login" element={<LoginSignup />} />
           <Route path="/home" element={<Dashboard />} />  {/* Add the dashboard route */}
+          <Route path="/job-listings" element={<JobListings />} />
         </Routes>
       </Router>
     </UserProvider>
