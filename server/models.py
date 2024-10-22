@@ -47,7 +47,18 @@ class Application(db.Model):
     
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     user = relationship('User', back_populates='applications')
-
+# Experience Model
+class Experience(db.Model):
+    __tablename__ = 'experiences'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    company = db.Column(db.String(100), nullable=False)
+    start_date = db.Column(db.DateTime)
+    end_date = db.Column(db.DateTime)
+    
+    # Relationship to User
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    user = relationship('User', back_populates='experiences')
 # Update the User model
 class User(db.Model):
     __tablename__ = 'users'
@@ -70,3 +81,4 @@ class User(db.Model):
     
     jobs = relationship('Job', back_populates='user')  # One-to-Many relationship with jobs
     applications = relationship('Application', back_populates='user')  # One-to-Many with applications
+    experiences = relationship('Experience', back_populates='user')  # One-to-Many with experiences
