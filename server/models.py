@@ -20,6 +20,20 @@ class Skill(db.Model):
     # Back reference to users
     users = relationship('User', secondary=user_skills, back_populates='skills')
 
+# Job Model
+class Job(db.Model):
+    __tablename__ = 'jobs'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    company = db.Column(db.String(100), nullable=False)
+    location = db.Column(db.String(100))
+    description = db.Column(db.Text)
+    posted_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationship with the User model
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    user = relationship('User', back_populates='jobs')
+
 # Update the User model
 class User(db.Model):
     __tablename__ = 'users'
@@ -39,3 +53,5 @@ class User(db.Model):
 
     def __repr__(self):
         return f'<User {self.name}>'
+    
+    jobs = relationship('Job', back_populates='user')  # One-to-Many relationship with jobs
