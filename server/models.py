@@ -59,6 +59,15 @@ class Experience(db.Model):
     # Relationship to User
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     user = relationship('User', back_populates='experiences')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'company': self.company,
+            'startDate': self.start_date.strftime('%Y-%m-%d') if self.start_date else None,
+            'endDate': self.end_date.strftime('%Y-%m-%d') if self.end_date else None
+        }
 # Update the User model
 class User(db.Model):
     __tablename__ = 'users'

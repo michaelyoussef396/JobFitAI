@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { UserContext } from '../UserContext';  // Import the UserContext
+import ExperienceSection from '../sections/ExperienceSection';
 
 const Dashboard = () => {
   const [skills, setSkills] = useState([]);  // User's skills
@@ -128,6 +129,8 @@ const Dashboard = () => {
           )}
         </ul>
       </div>
+
+      <ExperienceSection />
     </div>
   );
 };
