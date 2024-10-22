@@ -47,6 +47,33 @@ def login():
 
     return jsonify({"message": "Login successful!", "user": {"name": user.name, "email": user.email}}), 200
 
+@app.route('/profile', methods=['GET'])
+def get_profile():
+    email = request.args.get('email')  # Get user email from query params (for now)
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+    return jsonify({"user": {"name": user.name, "email": user.email}})
+
+# Route for fetching user skills based on email (or user ID)
+@app.route('/skills', methods=['GET'])
+def get_skills():
+    email = request.args.get('email')
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+    skills = [skill.name for skill in user.skills]  # Assuming User has a relationship with Skill model
+    return jsonify({"skills": skills})
+
+# Route for fetching job matches (mock data for now)
+@app.route('/job-matches', methods=['GET'])
+def get_job_matches():
+    jobs = [
+        {"title": "Software Engineer", "company": "Tech Corp", "location": "New York, NY"},
+        {"title": "Frontend Developer", "company": "Web Solutions", "location": "San Francisco, CA"},
+        {"title": "Data Scientist", "company": "Data Insights", "location": "Remote"},
+    ]
+    return jsonify({"jobs": jobs})
 
 @app.route('/')
 def index():

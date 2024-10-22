@@ -1,30 +1,26 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
+import { useNavigate } from 'react-router-dom';
+import { UserContext } from '../UserContext';  // Import UserContext
 
 const LoginSignup = () => {
-  const [isLogin, setIsLogin] = useState(false); // Start with sign-up by default
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-  });
+  const [isLogin, setIsLogin] = useState(true);
+  const [formData, setFormData] = useState({ name: '', email: '', password: '' });
   const [message, setMessage] = useState('');
-  const [user, setUser] = useState(null);  // Store the logged-in user
+  const { loginUser } = useContext(UserContext);  // Use the loginUser function from context
+  const navigate = useNavigate();
 
   // Handle form input changes
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Handle form submit for Sign-Up or Login
+  // Handle form submit for login
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     const endpoint = isLogin
-      ? "http://localhost:5555/login"  // Backend route for login
-      : "http://localhost:5555/signup";  // Backend route for sign-up
+      ? "http://localhost:5555/login"
+      : "http://localhost:5555/signup";
 
     try {
       const response = await fetch(endpoint, {
@@ -34,23 +30,19 @@ const LoginSignup = () => {
         },
         body: JSON.stringify(formData),
       });
+
       const data = await response.json();
       setMessage(data.message);
 
-      if (response.ok) {
-        console.log(`${isLogin ? "Login" : "Sign-up"} success:`, data);
-        if (isLogin) {
-          // If login is successful, store the user data
-          setUser(data.user);
-          // You can also redirect to a protected page here or handle login success
-        } else {
-          // If sign-up is successful, switch to login form
-          setIsLogin(true);
-        }
+      if (response.ok && isLogin) {
+        loginUser(data.user);  // Save the user to context
+        navigate("/home");  // Redirect to dashboard after successful login
+      } else if (!isLogin && response.ok) {
+        setIsLogin(true);  // Switch to login after successful sign-up
       }
     } catch (error) {
       console.error("Error:", error);
-      setMessage(`${isLogin ? "Login" : "Sign-up"} failed`);
+      setMessage("An error occurred");
     }
   };
 
@@ -61,7 +53,7 @@ const LoginSignup = () => {
           {isLogin ? "Login" : "Sign Up"}
         </h2>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {!isLogin && ( // Show name field only on Sign-Up
+          {!isLogin && (
             <div>
               <label className="block mb-2 text-base-bold">Name</label>
               <input
@@ -110,14 +102,6 @@ const LoginSignup = () => {
           </span>
         </p>
         <p className="mt-4 text-center">{message}</p>
-
-        {/* Show logged-in user info */}
-        {user && (
-          <div className="mt-4 text-center">
-            <h4>Welcome, {user.name}!</h4>
-            <p>Your email: {user.email}</p>
-          </div>
-        )}
       </div>
     </div>
   );
