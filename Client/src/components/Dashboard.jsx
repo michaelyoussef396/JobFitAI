@@ -2,12 +2,14 @@ import React, { useEffect, useState, useContext } from 'react';
 import { UserContext } from '../UserContext';  // Import the UserContext
 import SkillsSection from '../sections/SkillsSection';
 import ExperienceSection from '../sections/ExperienceSection';
+import ProfileSection from '../sections/ProfileSection';  // Import the ProfileSection
 
 const Dashboard = () => {
   const [jobs, setJobs] = useState([]);  // Job listings
   const { user } = useContext(UserContext);  // Get the logged-in user
 
   const userEmail = user?.email;  // Use the logged-in user's email
+  const userName = user?.name;    // Get the logged-in user's name
 
   useEffect(() => {
     if (userEmail) {
@@ -30,24 +32,25 @@ const Dashboard = () => {
     <div className="container mx-auto py-8">
       <h1 className="text-3xl mb-6">Dashboard</h1>
 
+      {/* Display User's Name and Email */}
+      {user ? (
+        <div className="mb-8 bg-s1 p-4 rounded-lg shadow-md">
+          <h2 className="text-xl mb-2"><strong>Welcome, {userName}!</strong></h2>
+          <p><strong>Email:</strong> {userEmail}</p>
+        </div>
+      ) : (
+        <p>Loading user information...</p>
+      )}
+
       {/* User Profile Section */}
-      <div className="mb-8">
-        <h2 className="text-2xl mb-4">Profile</h2>
-        {user ? (
-          <div className="bg-s1 p-4 rounded-lg shadow-md">
-            <p><strong>Name:</strong> {user.name}</p>
-            <p><strong>Email:</strong> {user.email}</p>
-          </div>
-        ) : (
-          <p>Loading profile...</p>
-        )}
-      </div>
+      <ProfileSection />  {/* Use the ProfileSection */}
 
       {/* Skills Section */}
       <SkillsSection />
 
-        {/* Experience Section */}
-        <ExperienceSection />
+      {/* Experience Section */}
+      <ExperienceSection />
+
       {/* Job Matches Section */}
       <div>
         <h2 className="text-2xl mb-4">Job Matches</h2>
@@ -65,7 +68,6 @@ const Dashboard = () => {
           )}
         </ul>
       </div>
-
     </div>
   );
 };

@@ -75,9 +75,9 @@ class User(db.Model):
     name = db.Column(db.String(50), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
-
-    # Relationships
-    skills = relationship('Skill', secondary=user_skills, back_populates='users')  # Many-to-Many with skills
+    bio = db.Column(db.Text)  # New bio field
+    location = db.Column(db.String(100))  # New location field
+    website = db.Column(db.String(120))  # New website field
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -88,6 +88,8 @@ class User(db.Model):
     def __repr__(self):
         return f'<User {self.name}>'
     
+    # Relationships
+    skills = relationship('Skill', secondary=user_skills, back_populates='users')  # Many-to-Many with skills
     jobs = relationship('Job', back_populates='user')  # One-to-Many relationship with jobs
     applications = relationship('Application', back_populates='user')  # One-to-Many with applications
     experiences = relationship('Experience', back_populates='user')  # One-to-Many with experiences

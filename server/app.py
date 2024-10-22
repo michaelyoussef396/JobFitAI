@@ -12,13 +12,15 @@ from models import User, Skill, Job, Application, Experience
 # Local imports
 from config import app, db, api
 
-# User Signup
 @app.route('/signup', methods=['POST'])
 def signup():
     data = request.get_json()
     name = data.get('name')
     email = data.get('email')
     password = data.get('password')
+    bio = data.get('bio')  # New bio field
+    location = data.get('location')  # New location field
+    website = data.get('website')  # New website field
 
     # Check if the user already exists
     user = User.query.filter_by(email=email).first()
@@ -26,13 +28,12 @@ def signup():
         return jsonify({"message": "User already exists!"}), 400
 
     # Create a new user
-    new_user = User(name=name, email=email)
+    new_user = User(name=name, email=email, bio=bio, location=location, website=website)
     new_user.set_password(password)  # Hash the password
     db.session.add(new_user)
     db.session.commit()
 
     return jsonify({"message": "User created successfully!"}), 201
-
 # User Login
 @app.route('/login', methods=['POST'])
 def login():
@@ -54,11 +55,38 @@ def login():
 # Get User Profile
 @app.route('/profile', methods=['GET'])
 def get_profile():
-    email = request.args.get('email')  # Get user email from query params
+    email = request.args.get('email')
     user = User.query.filter_by(email=email).first()
+    
     if not user:
         return jsonify({"message": "User not found"}), 404
-    return jsonify({"user": {"name": user.name, "email": user.email}})
+    
+    profile_data = {
+        "bio": user.bio,
+        "location": user.location,
+        "website": user.website,
+        "email": user.email,
+        "name": user.name
+    }
+    
+    return jsonify(profile_data), 200
+
+
+@app.route('/profile', methods=['PUT'])
+def update_profile():
+    data = request.get_json()
+    user = User.query.filter_by(email=data['email']).first()
+    
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+    
+    user.bio = data.get('bio', user.bio)
+    user.location = data.get('location', user.location)
+    user.website = data.get('website', user.website)
+    
+    db.session.commit()
+    
+    return jsonify({"message": "Profile updated successfully!"}), 200
 
 # Get User Skills
 @app.route('/skills', methods=['GET'])
