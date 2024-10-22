@@ -1,61 +1,21 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { UserContext } from '../UserContext';  // Import the UserContext
+import SkillsSection from '../sections/SkillsSection';
 import ExperienceSection from '../sections/ExperienceSection';
 
 const Dashboard = () => {
-  const [skills, setSkills] = useState([]);  // User's skills
   const [jobs, setJobs] = useState([]);  // Job listings
-  const [newSkill, setNewSkill] = useState('');  // New skill state
   const { user } = useContext(UserContext);  // Get the logged-in user
 
   const userEmail = user?.email;  // Use the logged-in user's email
 
-  // Handle skill input change
-  const handleSkillChange = (e) => setNewSkill(e.target.value);
-
-  // Add skill to the backend
-  const addSkill = async () => {
-    try {
-      const response = await fetch(`http://localhost:5555/skills`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email: userEmail, skill: newSkill }),  // Send email and skill
-      });
-      const data = await response.json();
-      if (response.ok) {
-        // Update skills in the state
-        setSkills([...skills, newSkill]);
-        setNewSkill('');  // Clear input
-      } else {
-        console.error(data.message);
-      }
-    } catch (error) {
-      console.error('Error adding skill:', error);
-    }
-  };
-
   useEffect(() => {
     if (userEmail) {
-      // Fetch user profile and skills from the backend
-      fetchUserSkills();
       fetchJobMatches();
     }
   }, [userEmail]);
 
-  // Fetch user skills
-  const fetchUserSkills = async () => {
-    try {
-      const response = await fetch(`http://localhost:5555/skills?email=${userEmail}`);
-      const data = await response.json();
-      setSkills(data.skills);
-    } catch (error) {
-      console.error('Error fetching skills:', error);
-    }
-  };
-
-  // Fetch job matches (same as before)
+  // Fetch job matches
   const fetchJobMatches = async () => {
     try {
       const response = await fetch('http://localhost:5555/job-matches');
@@ -84,34 +44,10 @@ const Dashboard = () => {
       </div>
 
       {/* Skills Section */}
-      <div className="mb-8">
-        <h2 className="text-2xl mb-4">Skills</h2>
-        <ul className="list-disc list-inside bg-s2 p-4 rounded-lg shadow-md">
-          {skills.length > 0 ? (
-            skills.map((skill, index) => <li key={index}>{skill}</li>)
-          ) : (
-            <li>No skills added yet.</li>
-          )}
-        </ul>
+      <SkillsSection />
 
-        {/* Add Skill Form */}
-        <div className="mt-4">
-          <input
-            type="text"
-            value={newSkill}
-            onChange={handleSkillChange}
-            placeholder="Add a new skill"
-            className="w-full px-4 py-2 bg-s1 text-p5 border border-s4 rounded-14 focus:outline-none focus:ring-2 focus:ring-p1"
-          />
-          <button
-            className="mt-2 py-2 px-4 bg-p3 text-s1 rounded-14 transition-all duration-500 hover:bg-p2 hover:shadow-200"
-            onClick={addSkill}
-          >
-            Add Skill
-          </button>
-        </div>
-      </div>
-
+        {/* Experience Section */}
+        <ExperienceSection />
       {/* Job Matches Section */}
       <div>
         <h2 className="text-2xl mb-4">Job Matches</h2>
@@ -130,7 +66,6 @@ const Dashboard = () => {
         </ul>
       </div>
 
-      <ExperienceSection />
     </div>
   );
 };

@@ -67,7 +67,7 @@ def get_skills():
     user = User.query.filter_by(email=email).first()
     if not user:
         return jsonify({"message": "User not found"}), 404
-    skills = [skill.name for skill in user.skills]  # Assuming User has a relationship with Skill model
+    skills = [{'id': skill.id, 'name': skill.name} for skill in user.skills]  # Return skill ID and name
     return jsonify({"skills": skills})
 
 # Add a New Skill
@@ -95,7 +95,43 @@ def add_skill():
         user.skills.append(skill)
         db.session.commit()
 
-    return jsonify({"message": f"Skill '{skill_name}' added successfully!"}), 201
+    return jsonify({"id": skill.id, "name": skill_name}), 201  # Return the newly added skill's ID and name
+
+# Update a Skill (for editing a user's skill)
+@app.route('/skills/<int:id>', methods=['PUT'])
+def update_skill(id):
+    data = request.get_json()
+    user = User.query.filter_by(email=data['email']).first()
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    skill = Skill.query.get(id)
+    if not skill:
+        return jsonify({"message": "Skill not found"}), 404
+
+    # Update the skill's name
+    skill.name = data['skill']
+    db.session.commit()
+    return jsonify({"message": f"Skill '{skill.name}' updated successfully!"}), 200
+
+# Delete a Skill (for removing a user's skill)
+@app.route('/skills/<int:id>', methods=['DELETE'])
+def delete_skill(id):
+    data = request.get_json()
+    user = User.query.filter_by(email=data['email']).first()
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    skill = Skill.query.get(id)
+    if not skill:
+        return jsonify({"message": "Skill not found"}), 404
+
+    # Remove the skill from the user's skill set
+    if skill in user.skills:
+        user.skills.remove(skill)
+        db.session.commit()
+
+    return jsonify({"message": f"Skill '{skill.name}' removed successfully!"}), 200
 
 # Get User Experiences
 @app.route('/experiences', methods=['GET'])
