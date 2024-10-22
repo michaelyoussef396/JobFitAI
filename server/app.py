@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
 # Standard library imports
-from datetime import datetime  # Import datetime
+from datetime import datetime
+import os
+import requests
+from dotenv import load_dotenv
 
 # Remote library imports
 from flask import request, jsonify
@@ -9,9 +12,13 @@ from flask_restful import Resource
 from werkzeug.security import generate_password_hash
 from models import User, Skill, Job, Application, Experience
 
+# Load environment variables from .env file
+load_dotenv()
+
 # Local imports
 from config import app, db, api
 
+# User Signup
 @app.route('/signup', methods=['POST'])
 def signup():
     data = request.get_json()
@@ -34,6 +41,7 @@ def signup():
     db.session.commit()
 
     return jsonify({"message": "User created successfully!"}), 201
+
 # User Login
 @app.route('/login', methods=['POST'])
 def login():
@@ -71,7 +79,7 @@ def get_profile():
     
     return jsonify(profile_data), 200
 
-
+# Update User Profile
 @app.route('/profile', methods=['PUT'])
 def update_profile():
     data = request.get_json()
@@ -125,7 +133,7 @@ def add_skill():
 
     return jsonify({"id": skill.id, "name": skill_name}), 201  # Return the newly added skill's ID and name
 
-# Update a Skill (for editing a user's skill)
+# Update a Skill
 @app.route('/skills/<int:id>', methods=['PUT'])
 def update_skill(id):
     data = request.get_json()
@@ -142,7 +150,7 @@ def update_skill(id):
     db.session.commit()
     return jsonify({"message": f"Skill '{skill.name}' updated successfully!"}), 200
 
-# Delete a Skill (for removing a user's skill)
+# Delete a Skill
 @app.route('/skills/<int:id>', methods=['DELETE'])
 def delete_skill(id):
     data = request.get_json()
@@ -222,6 +230,27 @@ def delete_experience(id):
     db.session.delete(exp)
     db.session.commit()
     return jsonify({"message": "Experience deleted"}), 200
+
+# Get Job Listings from Adzuna
+@app.route('/job-listings', methods=['GET'])
+def get_job_listings():
+    try:
+        # Get API credentials from environment variables
+        app_id = os.getenv("ADZUNA_APP_ID")
+        app_key = os.getenv("ADZUNA_APP_KEY")
+        
+        if not app_id or not app_key:
+            raise ValueError("Missing Adzuna API credentials")
+
+        url = f"https://api.adzuna.com/v1/api/jobs/gb/search/1?app_id={app_id}&app_key={app_key}&results_per_page=10"
+        
+        # Optional: Add parameters for search filtering (title, location)
+        response = requests.get(url)
+        jobs = response.json().get('results', [])
+        
+        return jsonify(jobs)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 # Index Route
 @app.route('/')
