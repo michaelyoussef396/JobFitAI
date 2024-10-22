@@ -34,6 +34,20 @@ class Job(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     user = relationship('User', back_populates='jobs')
 
+# Application Model
+class Application(db.Model):
+    __tablename__ = 'applications'
+    id = db.Column(db.Integer, primary_key=True)
+    status = db.Column(db.String(50), nullable=False, default='applied')
+    applied_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    job_id = db.Column(db.Integer, db.ForeignKey('jobs.id'))
+    job = relationship('Job')
+    
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    user = relationship('User', back_populates='applications')
+
 # Update the User model
 class User(db.Model):
     __tablename__ = 'users'
@@ -55,3 +69,4 @@ class User(db.Model):
         return f'<User {self.name}>'
     
     jobs = relationship('Job', back_populates='user')  # One-to-Many relationship with jobs
+    applications = relationship('Application', back_populates='user')  # One-to-Many with applications
