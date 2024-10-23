@@ -3,7 +3,6 @@
 # Standard library imports
 from datetime import datetime
 import os
-import requests
 from dotenv import load_dotenv
 
 # Remote library imports
@@ -16,7 +15,7 @@ from models import User, Skill, Job, Application, Experience
 load_dotenv()
 
 # Local imports
-from config import app, db, api
+from config import app, db
 
 # User Signup
 @app.route('/signup', methods=['POST'])
@@ -74,12 +73,12 @@ def get_profile():
         "location": user.location,
         "website": user.website,
         "email": user.email,
-        "name": user.name
+        "name": user.name,
+        "desired_job_title": user.desired_job_title  # Include desired job title
     }
     
     return jsonify(profile_data), 200
 
-# Update User Profile
 @app.route('/profile', methods=['PUT'])
 def update_profile():
     data = request.get_json()
@@ -88,9 +87,11 @@ def update_profile():
     if not user:
         return jsonify({"message": "User not found"}), 404
     
+    # Update the fields with new values
     user.bio = data.get('bio', user.bio)
     user.location = data.get('location', user.location)
     user.website = data.get('website', user.website)
+    user.desired_job_title = data.get('desired_job_title', user.desired_job_title)  # Update desired job title
     
     db.session.commit()
     
@@ -105,6 +106,15 @@ def get_skills():
         return jsonify({"message": "User not found"}), 404
     skills = [{'id': skill.id, 'name': skill.name} for skill in user.skills]  # Return skill ID and name
     return jsonify({"skills": skills})
+
+@app.route('/experiences', methods=['GET'])
+def get_experiences():
+    email = request.args.get('email')
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+    experiences = [exp.to_dict() for exp in user.experiences]  # Make sure experiences are returned correctly
+    return jsonify({"experiences": experiences})
 
 # Add a New Skill
 @app.route('/skills', methods=['POST'])
@@ -169,89 +179,95 @@ def delete_skill(id):
 
     return jsonify({"message": f"Skill '{skill.name}' removed successfully!"}), 200
 
-# Get User Experiences
-@app.route('/experiences', methods=['GET'])
-def get_experiences():
-    email = request.args.get('email')
+# Save Job
+@app.route('/save-job', methods=['POST'])
+def save_job():
+    data = request.get_json()
+    email = data.get('email')
+    job = data.get('job')
+
     user = User.query.filter_by(email=email).first()
     if not user:
         return jsonify({"message": "User not found"}), 404
-    experiences = [exp.to_dict() for exp in user.experiences]
-    return jsonify({"experiences": experiences})
 
-# Add a New Experience
-@app.route('/experiences', methods=['POST'])
-def add_experience():
-    data = request.get_json()
-    user = User.query.filter_by(email=data['email']).first()
+    # Check if the job already exists in the database to avoid duplicates
+    existing_job = Job.query.filter_by(id=job['id']).first()
+    if not existing_job:
+        # Assuming the Job model contains these fields
+        saved_job = Job(
+            id=job['id'],  # Make sure your Job model has this 'id' field
+            title=job['title'],
+            company=job['company'],
+            location=job['location'],
+            description=job.get('description', ''),  # Optional description field
+        )
+        db.session.add(saved_job)
+        db.session.commit()
+
+    # Add the job to the user's saved jobs
+    if existing_job not in user.saved_jobs:
+        user.saved_jobs.append(existing_job or saved_job)
+        db.session.commit()
+
+    return jsonify({"message": "Job saved successfully"}), 201
+
+# Fetch saved jobs
+@app.route('/saved-jobs', methods=['GET'])
+def get_saved_jobs():
+    email = request.args.get('email')
+    user = User.query.filter_by(email=email).first()
+
     if not user:
         return jsonify({"message": "User not found"}), 404
 
-    # Convert date strings to datetime objects
-    start_date = datetime.strptime(data['startDate'], '%Y-%m-%d').date() if data['startDate'] else None
-    end_date = datetime.strptime(data['endDate'], '%Y-%m-%d').date() if data['endDate'] else None
+    saved_jobs = [job.to_dict() for job in user.saved_jobs]
+    return jsonify({"saved_jobs": saved_jobs}), 200
 
-    new_exp = Experience(
-        title=data['title'],
-        company=data['company'],
-        start_date=start_date,
-        end_date=end_date,
-        user=user
-    )
-    
-    db.session.add(new_exp)
-    db.session.commit()
-    return jsonify(new_exp.to_dict()), 201
-
-# Update an Experience
-@app.route('/experiences/<int:id>', methods=['PUT'])
-def update_experience(id):
-    data = request.get_json()
-    exp = Experience.query.get(id)
-    if not exp:
-        return jsonify({"message": "Experience not found"}), 404
-
-    # Convert date strings to datetime objects
-    exp.start_date = datetime.strptime(data['startDate'], '%Y-%m-%d').date() if data['startDate'] else None
-    exp.end_date = datetime.strptime(data['endDate'], '%Y-%m-%d').date() if data['endDate'] else None
-
-    exp.title = data['title']
-    exp.company = data['company']
-    db.session.commit()
-    return jsonify(exp.to_dict()), 200
-
-# Delete an Experience
-@app.route('/experiences/<int:id>', methods=['DELETE'])
-def delete_experience(id):
-    exp = Experience.query.get(id)
-    if not exp:
-        return jsonify({"message": "Experience not found"}), 404
-
-    db.session.delete(exp)
-    db.session.commit()
-    return jsonify({"message": "Experience deleted"}), 200
-
-# Get Job Listings from Adzuna
+# Fetch Job Listings from Database (fake jobs)
 @app.route('/job-listings', methods=['GET'])
 def get_job_listings():
     try:
-        # Get API credentials from environment variables
-        app_id = os.getenv("ADZUNA_APP_ID")
-        app_key = os.getenv("ADZUNA_APP_KEY")
+        # Fetch all jobs from the database
+        jobs = Job.query.all()
         
-        if not app_id or not app_key:
-            raise ValueError("Missing Adzuna API credentials")
-
-        url = f"https://api.adzuna.com/v1/api/jobs/gb/search/1?app_id={app_id}&app_key={app_key}&results_per_page=10"
+        # Format the jobs to be returned as JSON
+        job_list = [
+            {
+                'id': job.id,
+                'title': job.title,
+                'company': job.company,
+                'location': job.location,
+                'description': job.description
+            } 
+            for job in jobs
+        ]
         
-        # Optional: Add parameters for search filtering (title, location)
-        response = requests.get(url)
-        jobs = response.json().get('results', [])
-        
-        return jsonify(jobs)
+        return jsonify(job_list), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Failed to fetch job listings"}), 500
 
+# Fetch Job Details
+@app.route('/job/<int:job_id>', methods=['GET'])
+def get_job_details(job_id):
+    try:
+        job = Job.query.get(job_id)
+        if not job:
+            return jsonify({"error": "Job not found"}), 404
+        
+        job_details = {
+            'id': job.id,
+            'title': job.title,
+            'company': job.company or 'Company not provided',
+            'location': job.location or 'Location not provided',
+            'salary_min': job.salary_min if job.salary_min else 'Not available',  # Handle missing salary
+            'salary_max': job.salary_max if job.salary_max else '',
+            'description': job.description if job.description else 'No description available'
+        }
+
+        return jsonify(job_details), 200
+    except Exception as e:
+        print(f"Error fetching job details: {e}")
+        return jsonify({"error": "Failed to fetch job details"}), 500
 # Index Route
 @app.route('/')
 def index():

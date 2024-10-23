@@ -6,7 +6,8 @@ const ProfileSection = () => {
   const [profileData, setProfileData] = useState({
     bio: '',
     location: '',
-    website: ''
+    website: '',
+    desiredJobTitle: '',  // Added for job search relevance
   });
 
   const userEmail = user?.email;  // Use the logged-in user's email
@@ -27,7 +28,8 @@ const ProfileSection = () => {
         setProfileData({
           bio: data.bio || '',
           location: data.location || '',
-          website: data.website || ''
+          website: data.website || '',
+          desiredJobTitle: data.desiredJobTitle || '',  // Handling desired job title
         });
       } else {
         console.error(data.message);
@@ -91,6 +93,16 @@ const ProfileSection = () => {
             type="text"
             name="website"
             value={profileData.website}
+            onChange={handleInputChange}
+            className="w-full px-4 py-2 bg-s1 text-p5 border border-s4 rounded-lg"
+          />
+        </div>
+        <div>
+          <label>Desired Job Title</label>  {/* Field for desired job title */}
+          <input
+            type="text"
+            name="desiredJobTitle"
+            value={profileData.desiredJobTitle}
             onChange={handleInputChange}
             className="w-full px-4 py-2 bg-s1 text-p5 border border-s4 rounded-lg"
           />

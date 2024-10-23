@@ -11,6 +11,7 @@ import LoginSignup from './pages/LoginSignup';
 import Dashboard from './components/Dashboard';
 import { UserProvider } from './UserContext';  // Import the UserProvider
 import JobListings from './components/JobListings';
+import JobDetails from './components/JobDetails';  // Import JobDetails component
 
 const App = () => {
   return (
@@ -34,6 +35,7 @@ const App = () => {
           <Route path="/login" element={<LoginSignup />} />
           <Route path="/home" element={<Dashboard />} />  {/* Add the dashboard route */}
           <Route path="/job-listings" element={<JobListings />} />
+          <Route path="/job/:jobId" element={<JobDetails />} />  {/* Add the job details route */}
         </Routes>
       </Router>
     </UserProvider>
