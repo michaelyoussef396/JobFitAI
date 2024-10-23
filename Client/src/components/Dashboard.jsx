@@ -2,6 +2,7 @@ import React, { useEffect, useState, useContext } from 'react';
 import { UserContext } from '../UserContext';
 import SkillsSection from '../sections/SkillsSection';
 import ExperienceSection from '../sections/ExperienceSection';
+import TechStackSection from '../sections/TechStackSection'; // Import TechStackSection
 import ProfileSection from '../sections/ProfileSection';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -61,6 +62,9 @@ const Dashboard = () => {
 
       {/* Skills Section */}
       <SkillsSection />
+
+      {/* Tech Stack Section */}
+      <TechStackSection />
 
       {/* Experience Section */}
       <ExperienceSection />

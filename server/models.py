@@ -11,6 +11,12 @@ user_skills = db.Table('user_skills',
     db.Column('skill_id', db.Integer, db.ForeignKey('skills.id'), primary_key=True)
 )
 
+# Many-to-Many association table for User and TechStack (languages/technologies)
+user_techstack = db.Table('user_techstack',
+    db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
+    db.Column('techstack_id', db.Integer, db.ForeignKey('techstack.id'), primary_key=True)
+)
+
 # Many-to-Many association table for saved jobs
 saved_jobs = db.Table('saved_jobs',
     db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
@@ -18,7 +24,7 @@ saved_jobs = db.Table('saved_jobs',
 )
 
 # Skill Model
-class Skill(db.Model):
+class Skill(db.Model, SerializerMixin):
     __tablename__ = 'skills'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
@@ -26,8 +32,17 @@ class Skill(db.Model):
     # Back reference to users
     users = relationship('User', secondary=user_skills, back_populates='skills')
 
+# TechStack Model (for user's technologies/languages)
+class TechStack(db.Model, SerializerMixin):
+    __tablename__ = 'techstack'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False)
+
+    # Back reference to users
+    users = relationship('User', secondary=user_techstack, back_populates='tech_stack')
+
 # Job Model
-class Job(db.Model):
+class Job(db.Model, SerializerMixin):
     __tablename__ = 'jobs'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -67,12 +82,12 @@ class Job(db.Model):
         }
 
 # Application Model
-class Application(db.Model):
+class Application(db.Model, SerializerMixin):
     __tablename__ = 'applications'
     id = db.Column(db.Integer, primary_key=True)
     status = db.Column(db.String(50), nullable=False, default='applied')
     applied_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     # Relationships
     job_id = db.Column(db.Integer, db.ForeignKey('jobs.id'))
     job = relationship('Job')
@@ -81,7 +96,7 @@ class Application(db.Model):
     user = relationship('User', back_populates='applications')
 
 # Experience Model
-class Experience(db.Model):
+class Experience(db.Model, SerializerMixin):
     __tablename__ = 'experiences'
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
@@ -103,7 +118,7 @@ class Experience(db.Model):
         }
 
 # User Model
-class User(db.Model):
+class User(db.Model, SerializerMixin):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
@@ -118,6 +133,7 @@ class User(db.Model):
 
     # Relationships
     skills = relationship('Skill', secondary=user_skills, back_populates='users')
+    tech_stack = relationship('TechStack', secondary=user_techstack, back_populates='users')  # Many-to-Many with TechStack
     experiences = relationship('Experience', back_populates='user')
     applications = relationship('Application', back_populates='user')  # One-to-Many with Application
     saved_jobs = relationship('Job', secondary=saved_jobs, back_populates='users')  # Many-to-Many with Job

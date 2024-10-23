@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from flask import request, jsonify
 from flask_restful import Resource
 from werkzeug.security import generate_password_hash
-from models import User, Skill, Job, Application, Experience
+from models import User, Skill, Job, Application, Experience, TechStack
 
 # Load environment variables from .env file
 load_dotenv()
@@ -226,26 +226,34 @@ def get_saved_jobs():
 # Fetch Job Listings from Database (fake jobs)
 @app.route('/job-listings', methods=['GET'])
 def get_job_listings():
-    try:
-        # Fetch all jobs from the database
-        jobs = Job.query.all()
-        
-        # Format the jobs to be returned as JSON
-        job_list = [
-            {
-                'id': job.id,
-                'title': job.title,
-                'company': job.company,
-                'location': job.location,
-                'description': job.description
-            } 
-            for job in jobs
-        ]
-        
-        return jsonify(job_list), 200
-    except Exception as e:
-        return jsonify({"error": "Failed to fetch job listings"}), 500
+    search_term = request.args.get('searchTerm', '')
+    location = request.args.get('location', '')
 
+    # Start by querying all jobs
+    jobs_query = Job.query
+
+    # Apply filters if searchTerm or location are provided
+    if search_term:
+        jobs_query = jobs_query.filter(Job.title.ilike(f'%{search_term}%'))  # Case-insensitive matching
+
+    if location:
+        jobs_query = jobs_query.filter(Job.location.ilike(f'%{location}%'))
+
+    jobs = jobs_query.all()
+
+    # Format the jobs to be returned as JSON
+    job_list = [
+        {
+            'id': job.id,
+            'title': job.title,
+            'company': job.company,
+            'location': job.location,
+            'description': job.description,
+        } 
+        for job in jobs
+    ]
+
+    return jsonify(job_list), 200
 # Fetch Job Details
 @app.route('/job/<int:job_id>', methods=['GET'])
 def get_job_details(job_id):
@@ -254,21 +262,188 @@ def get_job_details(job_id):
         if not job:
             return jsonify({"error": "Job not found"}), 404
         
+        # Return all job details, including the new sections
         job_details = {
             'id': job.id,
             'title': job.title,
             'company': job.company or 'Company not provided',
             'location': job.location or 'Location not provided',
-            'salary_min': job.salary_min if job.salary_min else 'Not available',  # Handle missing salary
+            'job_type': job.job_type or 'Not specified',
+            'salary_min': job.salary_min if job.salary_min else 'Not available',
             'salary_max': job.salary_max if job.salary_max else '',
-            'description': job.description if job.description else 'No description available'
+            'description': job.description if job.description else 'No description available',
+            'why_choose_us': job.why_choose_us if job.why_choose_us else 'No information available',
+            'role_responsibilities': job.role_responsibilities if job.role_responsibilities else 'No information available',
+            'benefits': job.benefits if job.benefits else 'No benefits specified',
+            'about_you': job.about_you if job.about_you else 'No information available',
+            'about_company': job.about_company if job.about_company else 'No information available',
+            'employer_questions': job.employer_questions if job.employer_questions else 'No questions specified'
         }
 
         return jsonify(job_details), 200
     except Exception as e:
         print(f"Error fetching job details: {e}")
         return jsonify({"error": "Failed to fetch job details"}), 500
-# Index Route
+
+# Get User Tech Stack
+@app.route('/techstack', methods=['GET'])
+def get_techstack():
+    email = request.args.get('email')
+    user = User.query.filter_by(email=email).first()
+
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    tech_stack = [{"id": tech.id, "name": tech.name} for tech in user.tech_stack]
+    return jsonify({"tech_stack": tech_stack}), 200
+
+# Add a New Tech Stack
+@app.route('/techstack', methods=['POST'])
+def add_techstack():
+    data = request.get_json()
+    email = data.get('email')
+    tech_name = data.get('tech')
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    techstack = TechStack.query.filter_by(name=tech_name).first()
+    if not techstack:
+        techstack = TechStack(name=tech_name)
+        db.session.add(techstack)
+        db.session.commit()
+
+    if techstack not in user.tech_stack:
+        user.tech_stack.append(techstack)
+        db.session.commit()
+
+    return jsonify({"id": techstack.id, "name": techstack.name}), 201
+
+# Update an existing Tech Stack
+@app.route('/techstack/<int:id>', methods=['PUT'])
+def update_techstack(id):
+    data = request.get_json()
+    user = User.query.filter_by(email=data['email']).first()
+
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    techstack = TechStack.query.get(id)
+    if not techstack:
+        return jsonify({"message": "Tech stack not found"}), 404
+
+    techstack.name = data['tech']
+    db.session.commit()
+
+    return jsonify({"message": "Tech stack updated successfully"}), 200
+
+# Delete Tech Stack
+@app.route('/techstack/<int:id>', methods=['DELETE'])
+def delete_techstack(id):
+    data = request.get_json()
+    user = User.query.filter_by(email=data['email']).first()
+
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    techstack = TechStack.query.get(id)
+    if not techstack:
+        return jsonify({"message": "Tech stack not found"}), 404
+
+    user.tech_stack.remove(techstack)
+    db.session.commit()
+
+    return jsonify({"message": "Tech stack removed successfully"}), 200
+
+# Add a new experience
+@app.route('/experiences', methods=['POST'])
+def add_experience():
+    data = request.get_json()
+    email = data.get('email')
+    title = data.get('title')
+    company = data.get('company')
+    start_date = data.get('startDate')
+    end_date = data.get('endDate')
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    # Create a new experience
+    new_experience = Experience(
+        title=title,
+        company=company,
+        start_date=datetime.strptime(start_date, '%Y-%m-%d') if start_date else None,
+        end_date=datetime.strptime(end_date, '%Y-%m-%d') if end_date else None,
+        user_id=user.id
+    )
+    
+    db.session.add(new_experience)
+    db.session.commit()
+
+    return jsonify({"message": "Experience added successfully!", "experience": new_experience.to_dict()}), 201
+
+# Update an existing experience
+@app.route('/experiences/<int:id>', methods=['PUT'])
+def update_experience(id):
+    data = request.get_json()
+    email = data.get('email')
+    title = data.get('title')
+    company = data.get('company')
+    start_date = data.get('startDate')
+    end_date = data.get('endDate')
+
+    # Find the user by email
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    # Find the experience by ID
+    experience = Experience.query.get(id)
+    if not experience:
+        return jsonify({"message": "Experience not found"}), 404
+
+    # Update the experience fields
+    experience.title = title
+    experience.company = company
+    
+    # Parse start date and end date, handling invalid formats
+    try:
+        experience.start_date = datetime.strptime(start_date, '%Y-%m-%d') if start_date else None
+    except ValueError:
+        return jsonify({"message": f"Invalid start date format: {start_date}. Expected format: YYYY-MM-DD"}), 400
+
+    try:
+        experience.end_date = datetime.strptime(end_date, '%Y-%m-%d') if end_date else None
+    except ValueError:
+        return jsonify({"message": f"Invalid end date format: {end_date}. Expected format: YYYY-MM-DD"}), 400
+
+    db.session.commit()
+
+    return jsonify({"message": "Experience updated successfully!", "experience": experience.to_dict()}), 200
+# Delete an experience
+@app.route('/experiences/<int:id>', methods=['DELETE'])
+def delete_experience(id):
+    data = request.get_json()
+    email = data.get('email')
+
+    # Find the user by email
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    # Find the experience by ID
+    experience = Experience.query.get(id)
+    if not experience:
+        return jsonify({"message": "Experience not found"}), 404
+
+    # Delete the experience
+    db.session.delete(experience)
+    db.session.commit()
+
+    return jsonify({"message": "Experience deleted successfully!"}), 200
+
 @app.route('/')
 def index():
     return '<h1>Project Server</h1>'

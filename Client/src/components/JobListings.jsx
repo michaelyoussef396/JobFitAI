@@ -14,14 +14,19 @@ const JobListings = () => {
         fetchJobListings();
     }, []);
 
-    const fetchJobListings = async () => {
-        try {
-            const response = await axios.get('http://localhost:5555/job-listings');
-            console.log('Job listings fetched from database:', response.data);
-            setJobs(response.data);
-        } catch (error) {
-            console.error('Error fetching job listings:', error);
-        }
+    const fetchJobListings = async (searchTerm = '', location = '') => {
+      try {
+        const response = await axios.get('http://localhost:5555/job-listings', {
+          params: {
+            searchTerm, // Send searchTerm and location as query parameters
+            location,
+          },
+        });
+        console.log('Job listings fetched from database:', response.data);
+        setJobs(response.data);
+      } catch (error) {
+        console.error('Error fetching job listings:', error);
+      }
     };
 
   const handleSaveJob = async (job) => {
@@ -43,7 +48,7 @@ const JobListings = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    fetchJobListings(searchTerm, location);
+    fetchJobListings(searchTerm, location); // Pass searchTerm and location
   };
 
   return (
