@@ -32,23 +32,38 @@ class Job(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String, nullable=False)
-    company = db.Column(db.String)
-    location = db.Column(db.String)
-    description = db.Column(db.Text)
-    salary_min = db.Column(db.Integer)  # Ensure these fields are present
-    salary_max = db.Column(db.Integer)  # Ensure these fields are present
+    company = db.Column(db.String, nullable=False)
+    location = db.Column(db.String, nullable=False)
+    job_type = db.Column(db.String, nullable=False)  # fulltime, parttime, casual, remote, hybrid
+    salary_min = db.Column(db.Float, nullable=True)
+    salary_max = db.Column(db.Float, nullable=True)
+    description = db.Column(db.Text, nullable=False)
+    why_choose_us = db.Column(db.Text, nullable=True)
+    role_responsibilities = db.Column(db.Text, nullable=True)
+    benefits = db.Column(db.Text, nullable=True)
+    about_you = db.Column(db.Text, nullable=True)
+    about_company = db.Column(db.Text, nullable=True)
+    employer_questions = db.Column(db.Text, nullable=True)
 
     # Relationship with users for saved jobs
     users = relationship('User', secondary=saved_jobs, back_populates='saved_jobs')
 
     def to_dict(self):
         return {
-            "id": self.id,
-            "title": self.title,
-            "company": self.company,
-            "location": self.location,
-            "description": self.description,
-            "posted_at": self.posted_at.strftime('%Y-%m-%d')
+            'id': self.id,
+            'title': self.title,
+            'company': self.company,
+            'location': self.location,
+            'job_type': self.job_type,
+            'salary_min': self.salary_min,
+            'salary_max': self.salary_max,
+            'description': self.description,
+            'why_choose_us': self.why_choose_us,
+            'role_responsibilities': self.role_responsibilities,
+            'benefits': self.benefits,
+            'about_you': self.about_you,
+            'about_company': self.about_company,
+            'employer_questions': self.employer_questions
         }
 
 # Application Model

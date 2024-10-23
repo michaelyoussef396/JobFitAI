@@ -1,56 +1,41 @@
 #!/usr/bin/env python3
 
-# Standard library imports
-from random import choice, randint
-
-# Remote library imports
+from app import db, app  # Assuming your app instance is created in app.py
+from models import Job
 from faker import Faker
 
-# Local imports
-from app import app
-from models import db, Job
-
-# Initialize Faker
-fake = Faker()
-
-# Define some predefined lists for generating random job titles, companies, and locations
-job_titles = [
-    "Software Engineer", "Data Scientist", "Product Manager", "UX Designer", "Sales Executive",
-    "Marketing Specialist", "Project Coordinator", "DevOps Engineer", "Mobile Developer", "Frontend Developer"
-]
-
-companies = [
-    "Tech Solutions", "Innovatech", "Global Ventures", "DataDynamics", "Cloud9 Systems",
-    "Bright Horizons", "RocketWeb", "NexGen Labs", "SwiftCode", "Bright Ventures"
-]
-
-locations = [
-    "New York", "San Francisco", "Chicago", "Austin", "Los Angeles",
-    "Seattle", "Boston", "London", "Berlin", "Melbourne"
-]
-
-# Seeding function
 def seed_jobs():
-    print("Seeding jobs...")
+    with app.app_context():  # Push the app context
+        db.drop_all()  # Clears the database
+        db.create_all()  # Recreates the tables
 
-    # Delete existing job records to prevent duplicates
-    Job.query.delete()
+        fake = Faker()
+        job_types = ["Full-time", "Part-time", "Casual", "Remote", "Hybrid"]
+        job_titles = ["Mobile Developer", "Frontend Developer", "Backend Developer", "DevOps Engineer", "Data Scientist", "Product Manager", "Marketing Specialist", "Sales Executive", "UX Designer"]
 
-    # Create 50 fake jobs
-    for _ in range(50):
-        job = Job(
-            title=choice(job_titles),
-            company=choice(companies),
-            location=choice(locations),
-            description=fake.paragraph(nb_sentences=5),
-            posted_at=fake.date_time_this_year()
-        )
-        db.session.add(job)
+        jobs = []
 
-    # Commit to save to the database
-    db.session.commit()
-    print("Seeding complete!")
+        for _ in range(30, 51):  # Generate between 30 and 50 jobs
+            job = Job(
+                title=fake.random.choice(job_titles),
+                company=fake.company(),
+                location=fake.city(),
+                job_type=f"{fake.random.choice(job_types)}, {fake.random.choice(job_types)}",
+                salary_min=round(fake.random_number(digits=5)),
+                salary_max=round(fake.random_number(digits=5)) + 20000,
+                description=fake.paragraph(nb_sentences=3),
+                why_choose_us=fake.sentence(),
+                role_responsibilities=fake.paragraph(nb_sentences=2),
+                benefits=fake.sentence(),
+                about_you=fake.sentence(),
+                about_company=fake.paragraph(nb_sentences=3),
+                employer_questions=f"Do you have experience in {fake.bs()}? Are you eligible to work in {fake.country()}?"
+            )
+            jobs.append(job)
+
+        db.session.bulk_save_objects(jobs)
+        db.session.commit()
+        print("Seeding complete!")
 
 if __name__ == '__main__':
-    with app.app_context():
-        seed_jobs()
+    seed_jobs()
