@@ -11,44 +11,33 @@ const JobListings = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-        fetchJobListings();
-    }, []);
+    fetchJobListings();
+  }, []);
 
-    const fetchJobListings = async (searchTerm = '', location = '') => {
-      try {
-        const response = await axios.get('http://localhost:5555/job-listings', {
-          params: {
-            searchTerm, // Send searchTerm and location as query parameters
-            location,
-          },
-        });
-        console.log('Job listings fetched from database:', response.data);
-        setJobs(response.data);
-      } catch (error) {
-        console.error('Error fetching job listings:', error);
-      }
-    };
-
-  const handleSaveJob = async (job) => {
+  const fetchJobListings = async (searchTerm = '', location = '') => {
     try {
-      await axios.post('http://localhost:5555/save-job', {
-        email: userEmail,  // Ensure this is a valid email of a registered user
-        job,
+      const response = await axios.get('http://localhost:5555/job-listings', {
+        params: { searchTerm, location },
       });
-      alert('Job saved successfully');
+      setJobs(response.data);
     } catch (error) {
-      console.error('Error saving job:', error);
+      console.error('Error fetching job listings:', error);
     }
   };
 
   const handleViewJob = (jobId) => {
-    console.log("Navigating to job ID:", jobId); // Ensure the correct job ID is passed
     navigate(`/job/${jobId}`);
+  };
+
+  const handleGenerateDocuments = (job) => {
+    // Placeholder for generating resume and cover letter
+    alert(`Generating resume and cover letter for job: ${job.title} at ${job.company}`);
+    // You can integrate this with the resume/cover letter generation logic here
   };
 
   const handleSearch = (e) => {
     e.preventDefault();
-    fetchJobListings(searchTerm, location); // Pass searchTerm and location
+    fetchJobListings(searchTerm, location);
   };
 
   return (
@@ -77,25 +66,25 @@ const JobListings = () => {
 
       <ul className="job-list bg-white p-6 rounded-lg shadow-md">
         {jobs.map((job) => (
-            <li key={job.id} className="job-item mb-4">
+          <li key={job.id} className="job-item mb-4">
             <h3 className="text-xl font-semibold">{job.title}</h3>
-            <p className="text-gray-700">{job.company || 'Company not provided'}</p>  {/* Safely handle company */}
-            <p className="text-gray-500">{job.location || 'Location not provided'}</p>  {/* Safely handle location */}
+            <p className="text-gray-700">{job.company || 'Company not provided'}</p>
+            <p className="text-gray-500">{job.location || 'Location not provided'}</p>
             <button
-                onClick={() => handleViewJob(job.id)}
-                className="bg-blue-500 text-white px-4 py-2 mt-2 rounded-lg hover:bg-blue-600"
+              onClick={() => handleViewJob(job.id)}
+              className="bg-blue-500 text-white px-4 py-2 mt-2 rounded-lg hover:bg-blue-600"
             >
-                View Job
+              View Job
             </button>
             <button
-                onClick={() => handleSaveJob(job)}
-                className="bg-green-500 text-white px-4 py-2 mt-2 rounded-lg hover:bg-green-600"
+              onClick={() => handleGenerateDocuments(job)}
+              className="bg-green-500 text-white px-4 py-2 mt-2 rounded-lg hover:bg-green-600"
             >
-                Save Job
+              Generate Resume & Cover Letter
             </button>
-            </li>
+          </li>
         ))}
-        </ul>
+      </ul>
     </div>
   );
 };

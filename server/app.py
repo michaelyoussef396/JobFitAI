@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from flask import request, jsonify
 from flask_restful import Resource
 from werkzeug.security import generate_password_hash
-from models import User, Skill, Job, Application, Experience, TechStack
+from models import User, Skill, Job, Experience, TechStack
 
 # Load environment variables from .env file
 load_dotenv()
@@ -79,6 +79,7 @@ def get_profile():
     
     return jsonify(profile_data), 200
 
+# Update User Profile
 @app.route('/profile', methods=['PUT'])
 def update_profile():
     data = request.get_json()
@@ -107,6 +108,7 @@ def get_skills():
     skills = [{'id': skill.id, 'name': skill.name} for skill in user.skills]  # Return skill ID and name
     return jsonify({"skills": skills})
 
+# Get User Experiences
 @app.route('/experiences', methods=['GET'])
 def get_experiences():
     email = request.args.get('email')
@@ -179,50 +181,6 @@ def delete_skill(id):
 
     return jsonify({"message": f"Skill '{skill.name}' removed successfully!"}), 200
 
-# Save Job
-@app.route('/save-job', methods=['POST'])
-def save_job():
-    data = request.get_json()
-    email = data.get('email')
-    job = data.get('job')
-
-    user = User.query.filter_by(email=email).first()
-    if not user:
-        return jsonify({"message": "User not found"}), 404
-
-    # Check if the job already exists in the database to avoid duplicates
-    existing_job = Job.query.filter_by(id=job['id']).first()
-    if not existing_job:
-        # Assuming the Job model contains these fields
-        saved_job = Job(
-            id=job['id'],  # Make sure your Job model has this 'id' field
-            title=job['title'],
-            company=job['company'],
-            location=job['location'],
-            description=job.get('description', ''),  # Optional description field
-        )
-        db.session.add(saved_job)
-        db.session.commit()
-
-    # Add the job to the user's saved jobs
-    if existing_job not in user.saved_jobs:
-        user.saved_jobs.append(existing_job or saved_job)
-        db.session.commit()
-
-    return jsonify({"message": "Job saved successfully"}), 201
-
-# Fetch saved jobs
-@app.route('/saved-jobs', methods=['GET'])
-def get_saved_jobs():
-    email = request.args.get('email')
-    user = User.query.filter_by(email=email).first()
-
-    if not user:
-        return jsonify({"message": "User not found"}), 404
-
-    saved_jobs = [job.to_dict() for job in user.saved_jobs]
-    return jsonify({"saved_jobs": saved_jobs}), 200
-
 # Fetch Job Listings from Database (fake jobs)
 @app.route('/job-listings', methods=['GET'])
 def get_job_listings():
@@ -254,6 +212,7 @@ def get_job_listings():
     ]
 
     return jsonify(job_list), 200
+
 # Fetch Job Details
 @app.route('/job/<int:job_id>', methods=['GET'])
 def get_job_details(job_id):
@@ -422,6 +381,7 @@ def update_experience(id):
     db.session.commit()
 
     return jsonify({"message": "Experience updated successfully!", "experience": experience.to_dict()}), 200
+
 # Delete an experience
 @app.route('/experiences/<int:id>', methods=['DELETE'])
 def delete_experience(id):
