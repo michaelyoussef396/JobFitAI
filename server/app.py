@@ -2,6 +2,7 @@
 
 # Standard library imports
 from datetime import datetime
+import openai
 import os
 from dotenv import load_dotenv
 
@@ -13,20 +14,22 @@ from models import User, Skill, Job, Experience, TechStack
 
 # Load environment variables from .env file
 load_dotenv()
+openai.api_key = os.getenv("OPENAI_API_KEY")
+print("OpenAI API Key:", os.getenv("OPENAI_API_KEY"))
 
 # Local imports
 from config import app, db
 
-# User Signup
 @app.route('/signup', methods=['POST'])
 def signup():
     data = request.get_json()
     name = data.get('name')
     email = data.get('email')
     password = data.get('password')
-    bio = data.get('bio')  # New bio field
-    location = data.get('location')  # New location field
-    website = data.get('website')  # New website field
+    bio = data.get('bio')  
+    location = data.get('location')  
+    website = data.get('website')
+    desired_job_title = data.get('desired_job_title')  # Add this field
 
     # Check if the user already exists
     user = User.query.filter_by(email=email).first()
@@ -34,13 +37,19 @@ def signup():
         return jsonify({"message": "User already exists!"}), 400
 
     # Create a new user
-    new_user = User(name=name, email=email, bio=bio, location=location, website=website)
-    new_user.set_password(password)  # Hash the password
+    new_user = User(
+        name=name, 
+        email=email, 
+        bio=bio, 
+        location=location, 
+        website=website, 
+        desired_job_title=desired_job_title  # Save this field
+    )
+    new_user.set_password(password)
     db.session.add(new_user)
     db.session.commit()
 
     return jsonify({"message": "User created successfully!"}), 201
-
 # User Login
 @app.route('/login', methods=['POST'])
 def login():
@@ -83,6 +92,8 @@ def get_profile():
 @app.route('/profile', methods=['PUT'])
 def update_profile():
     data = request.get_json()
+    print("Received data:", data)  # Add this line to check if desired_job_title is in the request payload
+    
     user = User.query.filter_by(email=data['email']).first()
     
     if not user:
@@ -92,12 +103,13 @@ def update_profile():
     user.bio = data.get('bio', user.bio)
     user.location = data.get('location', user.location)
     user.website = data.get('website', user.website)
-    user.desired_job_title = data.get('desired_job_title', user.desired_job_title)  # Update desired job title
+    user.desired_job_title = data.get('desiredJobTitle', user.desired_job_title) # Update desired job title
+    
+    print("Updated user with desired_job_title:", user.desired_job_title)  # Add this line to confirm the value
     
     db.session.commit()
     
     return jsonify({"message": "Profile updated successfully!"}), 200
-
 # Get User Skills
 @app.route('/skills', methods=['GET'])
 def get_skills():
@@ -217,7 +229,7 @@ def get_job_listings():
 @app.route('/job/<int:job_id>', methods=['GET'])
 def get_job_details(job_id):
     try:
-        job = Job.query.get(job_id)
+        job = db.session.get(Job, job_id)
         if not job:
             return jsonify({"error": "Job not found"}), 404
         
@@ -404,6 +416,107 @@ def delete_experience(id):
 
     return jsonify({"message": "Experience deleted successfully!"}), 200
 
+@app.route('/generate-documents', methods=['POST'])
+def generate_documents():
+    data = request.get_json()
+    email = data.get('email')
+    job_id = data.get('job_id')
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    job = db.session.get(Job, job_id)
+    if not job:
+        return jsonify({"message": "Job not found"}), 404
+
+    # Debug prints to verify data
+    print(f"User: {user.name}, Job: {job.title}")
+
+    experience_list = "\n".join([
+        f"{exp.title} - {exp.company}, {exp.start_date.strftime('%Y-%m-%d')} to {exp.end_date.strftime('%Y-%m-%d') if exp.end_date else 'Present'}"
+        for exp in user.experiences
+    ])
+    skill_list = ", ".join([skill.name for skill in user.skills])
+    tech_stack_list = ", ".join([tech.name for tech in user.tech_stack])
+
+    prompt = f"""
+    Write a professional resume and cover letter for a job applicant.
+
+    Applicant details:
+    Name: {user.name}
+    Bio: {user.bio}
+    Location: {user.location}
+    Email: {user.email}
+    Skills: {skill_list}
+    Experience: {experience_list}
+    Tech Stack: {tech_stack_list}
+    Desired Job Title: {user.desired_job_title}
+
+    Job details:
+    Title: {job.title}
+    Company: {job.company}
+    Location: {job.location}
+    Job Type: {job.job_type}
+    Description: {job.description}
+    Role Responsibilities: {job.role_responsibilities}
+
+    Write the resume first, then the cover letter.
+
+    Resume:
+    Name: {user.name}
+    Location: {user.location}
+    Email: {user.email}
+    Skills: {skill_list}
+    Experience: {experience_list}
+    Tech Stack: {tech_stack_list}
+
+    SUMMARY
+    Experienced {user.desired_job_title} with a passion for creating innovative solutions and driving company growth through effective software engineering. Strong expertise in {tech_stack_list}.
+
+    EXPERIENCE
+    {experience_list}
+
+    SKILLS
+    {skill_list}
+
+    Cover Letter:
+    {user.name}
+    {user.location}
+    {user.email}
+
+    [Date]
+
+    Hiring Manager
+    {job.company}
+    {job.location}
+
+    Dear Hiring Manager,
+
+    I am excited to apply for the {job.title} position at {job.company}. With my background in {user.desired_job_title} and a strong passion for creating efficient and dynamic applications, I am confident in my ability to contribute effectively to your team.
+
+    In my previous roles as a {', '.join([f'{exp.title}' for exp in user.experiences])}, I have gained valuable experience in working on innovative projects and collaborating with teams to deliver high-quality solutions. My skills in problem-solving, communication, and time management combined with my solid tech stack knowledge make me a strong candidate for this position.
+
+    I am eager to bring my expertise in {user.desired_job_title} to {job.company} and contribute to the success of your projects. I am excited about the opportunity to work on {job.title} projects and continue growing professionally in this field.
+
+    Thank you for considering my application. I look forward to the possibility of discussing how my skills and experience align with the needs of your team.
+
+    Sincerely,
+    {user.name}
+    """
+
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=1500
+        )
+        generated_text = response.choices[0].message['content'].strip()
+        print(f"Generated Text: {generated_text}")  # Debug print to check the response
+        return jsonify({"generated_documents": generated_text}), 200
+    except Exception as e:
+        print(f"Error during OpenAI API call: {e}")
+        return jsonify({"error": str(e)}), 500
 @app.route('/')
 def index():
     return '<h1>Project Server</h1>'

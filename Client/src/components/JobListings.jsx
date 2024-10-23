@@ -29,12 +29,6 @@ const JobListings = () => {
     navigate(`/job/${jobId}`);
   };
 
-  const handleGenerateDocuments = (job) => {
-    // Placeholder for generating resume and cover letter
-    alert(`Generating resume and cover letter for job: ${job.title} at ${job.company}`);
-    // You can integrate this with the resume/cover letter generation logic here
-  };
-
   const handleSearch = (e) => {
     e.preventDefault();
     fetchJobListings(searchTerm, location);
@@ -76,12 +70,7 @@ const JobListings = () => {
             >
               View Job
             </button>
-            <button
-              onClick={() => handleGenerateDocuments(job)}
-              className="bg-green-500 text-white px-4 py-2 mt-2 rounded-lg hover:bg-green-600"
-            >
-              Generate Resume & Cover Letter
-            </button>
+
           </li>
         ))}
       </ul>

@@ -6,6 +6,8 @@ const JobDetails = () => {
   const { jobId } = useParams();
   const [job, setJob] = useState(null);
   const [error, setError] = useState(null);
+  const [resume, setResume] = useState(null); // State for storing resume
+  const [coverLetter, setCoverLetter] = useState(null); // State for storing cover letter
 
   useEffect(() => {
     fetchJobDetails();
@@ -27,10 +29,29 @@ const JobDetails = () => {
     }
   };
 
-  const handleGenerateDocuments = () => {
-    // Placeholder for generating resume and cover letter
-    alert(`Generating resume and cover letter for job: ${job.title} at ${job.company}`);
-    // Integrate with resume/cover letter generation logic here
+  const handleGenerateDocuments = async () => {
+    try {
+      const response = await axios.post('http://localhost:5555/generate-documents', {
+        email: 'michaelyoussef396@gmail.com', // Replace this with dynamic logged-in user email
+        job_id: job.id,
+      });
+  
+      if (response.data.generated_documents) {
+        const documents = response.data.generated_documents.split('Cover Letter:'); // Split based on "Cover Letter:"
+        
+        // Check if the split operation succeeded
+        if (documents.length > 1) {
+          setResume(documents[0].trim()); // First part is the resume
+          setCoverLetter(`Cover Letter:${documents[1].trim()}`); // Second part is the cover letter
+        } else {
+          setResume(response.data.generated_documents.trim()); // Only resume found, no cover letter
+          setCoverLetter(null); // No cover letter available
+        }
+      }
+    } catch (error) {
+      console.error('Error generating documents:', error);
+      alert('Failed to generate resume and cover letter');
+    }
   };
 
   if (error) {
@@ -40,7 +61,7 @@ const JobDetails = () => {
   if (!job) return <p>Loading job details...</p>;
 
   return (
-    <div className="job-details max-w-4xl mx-auto p-8  shadow-lg rounded-lg">
+    <div className="job-details max-w-4xl mx-auto p-8 shadow-lg rounded-lg">
       <h1 className="text-3xl font-bold mb-6 text-gray-800">{job?.title}</h1>
 
       <div className="job-info grid grid-cols-2 gap-6 mb-6">
@@ -79,10 +100,26 @@ const JobDetails = () => {
 
       <button
         onClick={handleGenerateDocuments}
-        className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-colors duration-300"
+        className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-colors duration-300 mb-6"
       >
         Generate Resume & Cover Letter
       </button>
+
+      {/* Display resume and cover letter side by side */}
+      {resume && (
+        <div className="documents flex flex-wrap gap-6 mt-6">
+          <div className="resume w-full md:w-1/2 p-4 border rounded-lg bg-gray-100 shadow">
+            <h2 className="text-xl font-bold mb-4 text-gray-800">Generated Resume</h2>
+            <pre className="whitespace-pre-wrap">{resume}</pre>
+          </div>
+          {coverLetter && (
+            <div className="cover-letter w-full md:w-1/2 p-4 border rounded-lg bg-gray-100 shadow">
+              <h2 className="text-xl font-bold mb-4 text-gray-800">Generated Cover Letter</h2>
+              <pre className="whitespace-pre-wrap">{coverLetter}</pre>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

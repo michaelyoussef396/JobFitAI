@@ -1,5 +1,4 @@
 from sqlalchemy_serializer import SerializerMixin
-from sqlalchemy.ext.associationproxy import association_proxy
 from datetime import datetime
 from sqlalchemy.orm import relationship
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -21,21 +20,17 @@ user_techstack = db.Table('user_techstack',
 class Skill(db.Model, SerializerMixin):
     __tablename__ = 'skills'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), nullable=False)
-
-    # Back reference to users
+    name = db.Column(db.String(50), nullable=False, unique=True)  # Ensure skills are unique
     users = relationship('User', secondary=user_skills, back_populates='skills')
 
 # TechStack Model (for user's technologies/languages)
 class TechStack(db.Model, SerializerMixin):
     __tablename__ = 'techstack'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), nullable=False)
-
-    # Back reference to users
+    name = db.Column(db.String(50), nullable=False, unique=True)  # Ensure tech stack items are unique
     users = relationship('User', secondary=user_techstack, back_populates='tech_stack')
 
-# Job Model
+# Job Model (To store job details)
 class Job(db.Model, SerializerMixin):
     __tablename__ = 'jobs'
 
@@ -43,7 +38,7 @@ class Job(db.Model, SerializerMixin):
     title = db.Column(db.String, nullable=False)
     company = db.Column(db.String, nullable=False)
     location = db.Column(db.String, nullable=False)
-    job_type = db.Column(db.String, nullable=False)  # fulltime, parttime, casual, remote, hybrid
+    job_type = db.Column(db.String, nullable=False)  # full-time, part-time, etc.
     salary_min = db.Column(db.Float, nullable=True)
     salary_max = db.Column(db.Float, nullable=True)
     description = db.Column(db.Text, nullable=False)
@@ -72,7 +67,7 @@ class Job(db.Model, SerializerMixin):
             'employer_questions': self.employer_questions
         }
 
-# Experience Model
+# Experience Model (To store user experiences)
 class Experience(db.Model, SerializerMixin):
     __tablename__ = 'experiences'
     id = db.Column(db.Integer, primary_key=True)
@@ -94,7 +89,7 @@ class Experience(db.Model, SerializerMixin):
             'endDate': self.end_date.strftime('%Y-%m-%d') if self.end_date else None
         }
 
-# User Model
+# User Model (To store user details)
 class User(db.Model, SerializerMixin):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
@@ -102,7 +97,7 @@ class User(db.Model, SerializerMixin):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
 
-    # Other fields
+    # Additional fields
     bio = db.Column(db.Text)
     location = db.Column(db.String(100))
     website = db.Column(db.String(120))
@@ -110,7 +105,7 @@ class User(db.Model, SerializerMixin):
 
     # Relationships
     skills = relationship('Skill', secondary=user_skills, back_populates='users')
-    tech_stack = relationship('TechStack', secondary=user_techstack, back_populates='users')  # Many-to-Many with TechStack
+    tech_stack = relationship('TechStack', secondary=user_techstack, back_populates='users')
     experiences = relationship('Experience', back_populates='user')
 
     def set_password(self, password):

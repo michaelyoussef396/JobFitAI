@@ -53,9 +53,9 @@ const ProfileSection = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ ...profileData, email: userEmail })
+        body: JSON.stringify({ ...profileData, email: userEmail })  // Ensure desiredJobTitle is included here
       });
-
+  
       if (!response.ok) {
         console.error('Error updating profile:', await response.json());
       }
