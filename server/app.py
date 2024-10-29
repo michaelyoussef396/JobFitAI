@@ -83,7 +83,7 @@ def get_profile():
         "website": user.website,
         "email": user.email,
         "name": user.name,
-        "desired_job_title": user.desired_job_title  # Include desired job title
+        "desired_job_title": user.desired_job_title 
     }
     
     return jsonify(profile_data), 200

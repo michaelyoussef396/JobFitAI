@@ -7,7 +7,7 @@ export const UserContext = createContext();
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);  // Store user data
 
-  // Optional: Load user data from local storage or session storage (for persistence)
+  // Load user data from local storage (for persistence)
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {

@@ -5,6 +5,7 @@ import ExperienceSection from '../sections/ExperienceSection';
 import TechStackSection from '../sections/TechStackSection'; // Import TechStackSection
 import ProfileSection from '../sections/ProfileSection';
 import { useNavigate } from 'react-router-dom';
+import DashboardHeader from '../sections/DashboardHeader';
 
 const Dashboard = () => {
   const { user } = useContext(UserContext); // Logged-in user
@@ -15,32 +16,27 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-3xl mb-6">Dashboard</h1>
+    <>
+      <DashboardHeader />
+      <div className="container mx-auto py-8">
+        <h1 className="text-3xl mb-6">Dashboard</h1>
 
-      {user ? (
-        <div className="mb-8 bg-white p-4 rounded-lg shadow-md">
-          <h2 className="text-xl mb-2">Welcome, {user.name}!</h2>
-          <p><strong>Email:</strong> {user.email}</p>
-        </div>
-      ) : (
-        <p>Loading user information...</p>
-      )}
+        {user ? (
+          <div className="mb-8 bg-white p-4 rounded-lg shadow-md">
+            <h2 className="text-xl mb-2">Welcome, {user.name}!</h2>
+            <p><strong>Email:</strong> {user.email}</p>
+            <p><strong>Desired Job Title:</strong> {user.desired_job_title}</p> {/* Display desired job title */}
+          </div>
+        ) : (
+          <p>Loading user information...</p>
+        )}
 
-      <div className="mt-4">
-        <button
-          onClick={handleViewJobListings}
-          className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition"
-        >
-          View Job Listings
-        </button>
+        <ProfileSection />
+        <SkillsSection />
+        <TechStackSection />
+        <ExperienceSection />
       </div>
-
-      <ProfileSection />
-      <SkillsSection />
-      <TechStackSection />
-      <ExperienceSection />
-    </div>
+    </>
   );
 };
 
