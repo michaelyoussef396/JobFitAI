@@ -11,9 +11,6 @@ const Dashboard = () => {
   const { user } = useContext(UserContext); // Logged-in user
   const navigate = useNavigate();
 
-  const handleViewJobListings = () => {
-    navigate('/job-listings'); // Navigate to job listings page
-  };
 
   return (
     <>

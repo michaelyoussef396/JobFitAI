@@ -416,8 +416,15 @@ def delete_experience(id):
 
     return jsonify({"message": "Experience deleted successfully!"}), 200
 
-@app.route('/generate-documents', methods=['POST'])
-def generate_documents():
+@app.route('/generate-resume', methods=['POST'])
+def generate_resume():
+    return generate_documents(template='resume')
+
+@app.route('/generate-cover-letter', methods=['POST'])
+def generate_cover_letter():
+    return generate_documents(template='cover_letter')
+
+def generate_documents(template):
     data = request.get_json()
     email = data.get('email')
     job_id = data.get('job_id')
@@ -433,17 +440,13 @@ def generate_documents():
     # Debug prints to verify data
     print(f"User: {user.name}, Job: {job.title}")
 
-    experience_list = "\n".join([
-        f"{exp.title} - {exp.company}, {exp.start_date.strftime('%Y-%m-%d')} to {exp.end_date.strftime('%Y-%m-%d') if exp.end_date else 'Present'}"
-        for exp in user.experiences
-    ])
+    experience_list = "\n".join([f"{exp.title} - {exp.company}, {exp.start_date.strftime('%Y-%m-%d')} to {exp.end_date.strftime('%Y-%m-%d') if exp.end_date else 'Present'}"
+                                 for exp in user.experiences])
     skill_list = ", ".join([skill.name for skill in user.skills])
     tech_stack_list = ", ".join([tech.name for tech in user.tech_stack])
 
-    prompt = f"""
-    Write a professional resume and cover letter for a job applicant.
-
-    Applicant details:
+    # Common prompt details
+    applicant_details = f"""
     Name: {user.name}
     Bio: {user.bio}
     Location: {user.location}
@@ -460,50 +463,12 @@ def generate_documents():
     Job Type: {job.job_type}
     Description: {job.description}
     Role Responsibilities: {job.role_responsibilities}
-
-    Write the resume first, then the cover letter.
-
-    Resume:
-    Name: {user.name}
-    Location: {user.location}
-    Email: {user.email}
-    Skills: {skill_list}
-    Experience: {experience_list}
-    Tech Stack: {tech_stack_list}
-
-    SUMMARY
-    Experienced {user.desired_job_title} with a passion for creating innovative solutions and driving company growth through effective software engineering. Strong expertise in {tech_stack_list}.
-
-    EXPERIENCE
-    {experience_list}
-
-    SKILLS
-    {skill_list}
-
-    Cover Letter:
-    {user.name}
-    {user.location}
-    {user.email}
-
-    [Date]
-
-    Hiring Manager
-    {job.company}
-    {job.location}
-
-    Dear Hiring Manager,
-
-    I am excited to apply for the {job.title} position at {job.company}. With my background in {user.desired_job_title} and a strong passion for creating efficient and dynamic applications, I am confident in my ability to contribute effectively to your team.
-
-    In my previous roles as a {', '.join([f'{exp.title}' for exp in user.experiences])}, I have gained valuable experience in working on innovative projects and collaborating with teams to deliver high-quality solutions. My skills in problem-solving, communication, and time management combined with my solid tech stack knowledge make me a strong candidate for this position.
-
-    I am eager to bring my expertise in {user.desired_job_title} to {job.company} and contribute to the success of your projects. I am excited about the opportunity to work on {job.title} projects and continue growing professionally in this field.
-
-    Thank you for considering my application. I look forward to the possibility of discussing how my skills and experience align with the needs of your team.
-
-    Sincerely,
-    {user.name}
     """
+
+    if template == 'resume':
+        prompt = f"Write a professional resume for the following applicant:\n{applicant_details}"
+    else:  # cover_letter
+        prompt = f"Write a cover letter for the following applicant:\n{applicant_details}"
 
     try:
         response = openai.ChatCompletion.create(
@@ -513,10 +478,99 @@ def generate_documents():
         )
         generated_text = response.choices[0].message['content'].strip()
         print(f"Generated Text: {generated_text}")  # Debug print to check the response
-        return jsonify({"generated_documents": generated_text}), 200
+        return jsonify({"generated_document": generated_text}), 200
     except Exception as e:
         print(f"Error during OpenAI API call: {e}")
         return jsonify({"error": str(e)}), 500
+    
+@app.route('/prepare-interview', methods=['POST'])
+def prepare_interview():
+    data = request.get_json()
+    email = data.get('email')
+    job_id = data.get('job_id')
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    job = db.session.get(Job, job_id)
+    if not job:
+        return jsonify({"message": "Job not found"}), 404
+
+    # Prepare the prompt for generating interview questions
+    prompt = f"""
+    Generate 5 relevant interview questions for a {user.desired_job_title} position at {job.company} 
+    based on the following user profile:
+    
+    Name: {user.name}
+    Bio: {user.bio}
+    Location: {user.location}
+    Email: {user.email}
+    Skills: {', '.join([skill.name for skill in user.skills])}
+    Tech Stack: {', '.join([tech.name for tech in user.tech_stack])}
+    
+    Job details:
+    Title: {job.title}
+    Company: {job.company}
+    Location: {job.location}
+    Job Type: {job.job_type}
+    Description: {job.description}
+    Role Responsibilities: {job.role_responsibilities}
+    """
+
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=500
+        )
+        generated_questions = response.choices[0].message['content'].strip().split('\n')
+        
+        # Return the generated questions as a list
+        return jsonify({"questions": generated_questions}), 200
+    except Exception as e:
+        print(f"Error during OpenAI API call: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/answer-interview-questions', methods=['POST'])
+def answer_interview_questions():
+    data = request.get_json()
+    email = data.get('email')
+    job_id = data.get('job_id')
+    questions = data.get('questions', [])
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    job = db.session.get(Job, job_id)
+    if not job:
+        return jsonify({"message": "Job not found"}), 404
+
+    # Prepare prompt for generating answers
+    prompt = f"""
+Provide concise and professional answers to the following interview questions for a {user.desired_job_title} role at {job.company}.
+User profile details:
+Name: {user.name}
+Bio: {user.bio}
+Skills: {', '.join([skill.name for skill in user.skills])}
+Tech Stack: {', '.join([tech.name for tech in user.tech_stack])}
+
+Questions:
+""" + "\n".join(questions)
+
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=1000
+        )
+        answers = response.choices[0].message['content'].strip().split('\n')
+        return jsonify({"answers": answers}), 200
+    except Exception as e:
+        print(f"Error during OpenAI API call: {e}")
+        return jsonify({"error": str(e)}), 500
+    
 @app.route('/')
 def index():
     return '<h1>Project Server</h1>'

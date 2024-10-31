@@ -9,13 +9,13 @@ import Testimonials from './sections/Testimonials';
 import Footer from './sections/Footer';
 import LoginSignup from './pages/LoginSignup';
 import Dashboard from './components/Dashboard';
-import { UserProvider } from './UserContext';  // Import the UserProvider
+import { UserProvider } from './UserContext'; 
 import JobListings from './components/JobListings';
-import JobDetails from './components/JobDetails';  // Import JobDetails component
+import JobDetails from './components/JobDetails'; 
 
 const App = () => {
   return (
-    <UserProvider>  {/* Wrap the app with UserProvider */}
+    <UserProvider>  
       <Router>
         <Routes>
           <Route
